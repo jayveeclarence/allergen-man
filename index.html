@@ -1017,49 +1017,24 @@ async function endGame() {
 // LEADERBOARD — Google Sheets via Apps Script
 // Uses JSONP for GET (bypasses CORS) and iframe for POST
 // ═══════════════════════════════════════════════════════════════
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyUjfU6HS46MskYbcx1N5eXEmfhusRKWwDhh3KZ36bBA3y_7OdCibptrjkAVKJ6AHTZ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx2CeuH2k2BIueLSCaLuRizAi5lXTwP4SjdrAuDIE8OP1ofp8n-Lp2VQXkxbNp6X58D/exec";
 
-// POST via hidden iframe form — bypasses CORS entirely
+// POST via fetch with no-cors (fire-and-forget — GAS will receive it)
 function saveToLeaderboard(name, dept, plant, scoreTime) {
     return new Promise(resolve => {
-        try {
-            const iframe = document.createElement("iframe");
-            iframe.name = "gas_post_" + Date.now();
-            iframe.style.display = "none";
-            document.body.appendChild(iframe);
-
-            const form = document.createElement("form");
-            form.method = "POST";
-            form.action = GAS_URL;
-            form.target = iframe.name;
-            form.style.display = "none";
-
-            const fields = { name, dept, plant, time: scoreTime };
-            Object.entries(fields).forEach(([k, v]) => {
-                const input = document.createElement("input");
-                input.type = "hidden";
-                input.name = k;
-                input.value = v;
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
-
-            // Clean up after a moment; resolve regardless
-            setTimeout(() => {
-                document.body.removeChild(form);
-                document.body.removeChild(iframe);
-                resolve();
-            }, 1500);
-        } catch(e) {
-            console.warn("Save error:", e);
-            resolve();
-        }
+        const params = new URLSearchParams({ name, dept, plant, time: scoreTime });
+        fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+        .catch(e => console.warn("Save error:", e))
+        .finally(() => resolve());
     });
 }
 
-// GET via JSONP — Apps Script supports ?callback= natively
+// GET via JSONP — works cross-origin without CORS headers
 function fetchLeaderboard() {
     return new Promise(resolve => {
         const cbName = "gasCallback_" + Date.now();
@@ -1068,7 +1043,7 @@ function fetchLeaderboard() {
             cleanup();
             console.warn("Leaderboard fetch timed out");
             resolve({ P2: [], P3: [] });
-        }, 8000);
+        }, 10000);
 
         function cleanup() {
             clearTimeout(timer);
@@ -1082,7 +1057,11 @@ function fetchLeaderboard() {
         };
 
         script.src = GAS_URL + "?callback=" + cbName + "&t=" + Date.now();
-        script.onerror = () => { cleanup(); resolve({ P2: [], P3: [] }); };
+        script.onerror = (err) => {
+            console.warn("JSONP error:", err);
+            cleanup();
+            resolve({ P2: [], P3: [] });
+        };
         document.head.appendChild(script);
     });
 }
