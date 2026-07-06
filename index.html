@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Allergen Man Arcade</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-pink: #ff007f;
+            --neon-yellow: #fefe00;
+            --neon-green: #39ff14;
+            --bg-dark: #07071a;
+            --bg-card: #0d0d2b;
+            --border-glow: #1a1a4e;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            margin: 0; padding: 0;
+            min-height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: var(--bg-dark);
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(0,100,255,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255,0,127,0.05) 0%, transparent 50%);
+            color: #fff;
+            font-family: 'Orbitron', 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 12px 8px 24px;
+        }
+
+        .screen {
+            background: var(--bg-card);
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 24px rgba(0,242,255,0.25), inset 0 0 30px rgba(0,0,50,0.5);
+            border-radius: 12px;
+            padding: 20px 16px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            animation: screenIn 0.35s ease;
+        }
+
+        @keyframes screenIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .hidden { display: none !important; }
+
+        /* ── Typography ── */
+        h1 {
+            font-family: 'Press Start 2P', monospace;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow), 0 0 40px rgba(254,254,0,0.35);
+            margin: 0 0 6px;
+            font-size: clamp(1.1rem, 5vw, 1.8rem);
+            letter-spacing: 2px;
+            line-height: 1.5;
+        }
+
+        .subtitle {
+            color: var(--neon-pink);
+            font-size: clamp(0.55rem, 2.5vw, 0.7rem);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        hr { border-color: var(--border-glow); margin: 14px 0; }
+
+        /* ── Form ── */
+        label {
+            display: block;
+            text-align: left;
+            font-size: clamp(0.55rem, 2.2vw, 0.65rem);
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+            margin: 12px 0 4px 4px;
+            text-transform: uppercase;
+        }
+
+        input, select {
+            background: #111130;
+            border: 2px solid #333366;
+            color: #fff;
+            padding: 13px 14px;
+            font-size: clamp(0.85rem, 3.5vw, 1rem);
+            width: 100%;
+            border-radius: 8px;
+            font-family: 'Orbitron', monospace;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            display: block;
+            /* Prevent iOS zoom on focus */
+            font-size: max(16px, 1rem);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 10px rgba(255,0,127,0.35);
+            outline: none;
+        }
+
+        select option { background: #111130; }
+
+        /* ── Buttons ── */
+        .btn {
+            background: linear-gradient(135deg, #c0005f, #ff007f);
+            border: none;
+            color: #fff;
+            padding: 15px 20px;
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.18s;
+            text-transform: uppercase;
+            width: 100%;
+            margin: 10px 0 0;
+            display: block;
+            box-shadow: 0 4px 20px rgba(255,0,127,0.35);
+            touch-action: manipulation;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #004499, #0066ff);
+            box-shadow: 0 4px 20px rgba(0,100,255,0.35);
+        }
+
+        /* ── Game UI bar ── */
+        #game-ui {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .ui-chip {
+            background: #111130;
+            border: 1px solid #333366;
+            border-radius: 6px;
+            padding: 5px 6px;
+            font-size: clamp(0.5rem, 2vw, 0.65rem);
+            letter-spacing: 0.5px;
+        }
+
+        .ui-chip .label  { color: #666; font-size: clamp(0.45rem, 1.8vw, 0.55rem); display: block; margin-bottom: 2px; }
+        .ui-chip .value  { font-weight: 700; font-size: clamp(0.7rem, 2.8vw, 0.85rem); }
+
+        #lives-display { display: flex; gap: 3px; justify-content: center; font-size: clamp(0.9rem, 3.5vw, 1.1rem); }
+
+        /* ── Target banner ── */
+        #target-display {
+            background: linear-gradient(135deg, #1a0030, #300020);
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 12px rgba(255,0,127,0.25);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--neon-yellow);
+            margin-bottom: 8px;
+            font-family: 'Press Start 2P', monospace;
+            line-height: 1.8;
+        }
+
+        #target-display .collect-label {
+            color: #aaa;
+            font-size: clamp(0.42rem, 1.8vw, 0.55rem);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        #target-allergen {
+            color: var(--neon-pink);
+            font-size: clamp(0.65rem, 3vw, 0.9rem);
+            text-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        /* ── Progress bar ── */
+        #progress-bar-container {
+            background: #111130;
+            border: 1px solid #333;
+            border-radius: 4px;
+            height: 7px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            border-radius: 4px;
+            transition: width 0.3s;
+            box-shadow: 0 0 6px var(--neon-green);
+        }
+
+        /* ── Canvas ── */
+        .canvas-wrapper {
+            position: relative;
+            display: block;
+            width: 100%;
+            /* height set by JS */
+        }
+
+        canvas {
+            background: #000;
+            border: 2px solid #222244;
+            border-radius: 6px;
+            display: block;
+            width: 100% !important;   /* CSS scaling — canvas internal size set by JS */
+            height: auto !important;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+            touch-action: none;
+        }
+
+        #countdown-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(2.5rem, 12vw, 4rem);
+            color: var(--neon-yellow);
+            text-shadow: 0 0 30px var(--neon-yellow);
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+        }
+
+        /* ── D-pad touch controls — always visible, sized for thumbs ── */
+        #touch-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .dpad-row { display: flex; gap: 6px; }
+
+        .dpad-btn {
+            width: clamp(56px, 14vw, 72px);
+            height: clamp(56px, 14vw, 72px);
+            background: rgba(17,17,48,0.85);
+            border: 2px solid #333366;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.85);
+            font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            transition: background 0.08s, border-color 0.08s;
+        }
+
+        .dpad-btn:active,
+        .dpad-btn.pressed {
+            background: #222266;
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+        }
+
+        /* Hide D-pad on desktop (real keyboard available) */
+        @media (hover: hover) and (pointer: fine) {
+            #touch-controls { display: none; }
+            .controls-hint  { display: block; }
+        }
+
+        .controls-hint {
+            display: none;
+            margin-top: 8px;
+            font-size: 0.6rem;
+            color: #555;
+            letter-spacing: 1px;
+        }
+
+        /* ── Flash overlay ── */
+        #flash-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        /* ── Leaderboard ── */
+        .leaderboard-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;      /* stacks to 1 column on very narrow screens */
+        }
+
+        .leaderboard-column {
+            flex: 1 1 140px;      /* min 140px, grow equally */
+            background: #0a0a22;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #222244;
+            min-width: 0;
+        }
+
+        .leaderboard-column h3 {
+            margin: 0 0 8px;
+            font-size: clamp(0.55rem, 2.5vw, 0.7rem);
+            color: var(--neon-blue);
+            border-bottom: 1px solid #222244;
+            padding-bottom: 6px;
+            letter-spacing: 2px;
+        }
+
+        table { width: 100%; font-size: clamp(0.55rem, 2.2vw, 0.65rem); border-collapse: collapse; font-family: 'Orbitron', monospace; }
+        th { color: #555; font-weight: 400; padding: 3px 4px; text-align: left; font-size: clamp(0.45rem, 1.8vw, 0.55rem); }
+        td { padding: 5px 4px; word-break: break-word; }
+        tr:nth-child(even) td { background: #111130; }
+        .rank-1 td { color: var(--neon-yellow); }
+        .rank-2 td { color: #c0c0c0; }
+        .rank-3 td { color: #cd7f32; }
+
+        /* ── Result card ── */
+        #result-card {
+            background: linear-gradient(135deg, #0a0a22, #1a0030);
+            border: 2px solid var(--neon-blue);
+            border-radius: 10px;
+            padding: 18px 14px;
+            margin: 12px 0;
+        }
+
+        .big-time {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(1.4rem, 7vw, 2rem);
+            color: var(--neon-pink);
+            text-shadow: 0 0 20px var(--neon-pink);
+            display: block;
+            margin: 10px 0;
+        }
+
+        /* ── Penalty flash ── */
+        .penalty-flash { animation: penaltyPulse 0.5s ease; }
+
+        @keyframes penaltyPulse {
+            0%, 100% { border-color: var(--neon-blue); }
+            50%       { border-color: #ff0000; box-shadow: 0 0 40px rgba(255,0,0,0.8); }
+        }
+
+        /* ── Particles (canvas-relative, no DOM needed) ── */
+
+        /* ── Pre-leaderboard panel ── */
+        #pre-leaderboard { margin-top: 16px; }
+        #pre-leaderboard h2 {
+            font-size: clamp(0.55rem, 2.5vw, 0.75rem);
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+            margin: 0 0 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="flash-overlay"></div>
+
+<!-- ══════════════ SIGN-IN SCREEN ══════════════ -->
+<div id="sign-in-screen" class="screen">
+    <h1>ALLERGEN<br>MAN</h1>
+    <p class="subtitle">Food Safety Arcade — CDO Foodsphere</p>
+    <hr>
+    <label for="player-name">Full Name</label>
+    <input type="text" id="player-name" placeholder="Enter your full name" autocomplete="name">
+    <label for="player-dept">Department</label>
+    <input type="text" id="player-dept" placeholder="Enter your department" autocomplete="organization">
+    <label for="player-plant">Base Plant</label>
+    <select id="player-plant">
+        <option value="" disabled selected>Select plant…</option>
+        <option value="P2">Plant P2</option>
+        <option value="P3">Plant P3</option>
+    </select>
+    <button class="btn" id="btn-start">▶ START CHALLENGE</button>
+    <button class="btn btn-secondary" id="btn-view-lb" style="margin-top:8px;">🏆 VIEW LEADERBOARD</button>
+
+    <div id="pre-leaderboard" class="hidden">
+        <h2>🏆 TOP 10 LEADERBOARDS</h2>
+        <div class="leaderboard-container">
+            <div class="leaderboard-column">
+                <h3>PLANT P2</h3>
+                <table id="pre-leaderboard-P2">
+                    <thead><tr><th>#</th><th>Name</th><th>Dept</th><th>Time</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="leaderboard-column">
+                <h3>PLANT P3</h3>
+                <table id="pre-leaderboard-P3">
+                    <thead><tr><th>#</th><th>Name</th><th>Dept</th><th>Time</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <p style="color:#444;font-size:0.6rem;margin-top:18px;letter-spacing:1px;">Know your raw materials. Know your allergens.</p>
+</div>
+
+<!-- ══════════════ GAME SCREEN ══════════════ -->
+<div id="game-screen" class="screen hidden">
+    <div id="game-ui">
+        <div class="ui-chip">
+            <span class="label">Player</span>
+            <span class="value" id="ui-name" style="color:var(--neon-pink)">-</span>
+        </div>
+        <div class="ui-chip">
+            <span class="label">Time</span>
+            <span class="value" id="ui-timer" style="color:var(--neon-blue)">0.0s</span>
+        </div>
+        <div class="ui-chip">
+            <span class="label">Lives</span>
+            <div id="lives-display">❤️❤️❤️</div>
+        </div>
+    </div>
+
+    <div id="target-display">
+        <span class="collect-label">⚠ COLLECT RAW MATERIALS CONTAINING:</span>
+        <span id="target-allergen">—</span>
+    </div>
+
+    <div id="progress-bar-container">
+        <div id="progress-bar" style="width:100%"></div>
+    </div>
+
+    <div class="canvas-wrapper" id="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+        <div id="countdown-overlay"></div>
+    </div>
+
+    <!-- D-pad always in DOM; hidden via CSS on desktop -->
+    <div id="touch-controls">
+        <div class="dpad-row">
+            <div style="width:clamp(56px,14vw,72px)"></div>
+            <button class="dpad-btn" id="btn-up">▲</button>
+            <div style="width:clamp(56px,14vw,72px)"></div>
+        </div>
+        <div class="dpad-row">
+            <button class="dpad-btn" id="btn-left">◀</button>
+            <button class="dpad-btn" id="btn-down">▼</button>
+            <button class="dpad-btn" id="btn-right">▶</button>
+        </div>
+    </div>
+
+    <div class="controls-hint">ARROW KEYS or WASD to move &nbsp;|&nbsp; Avoid ghosts &amp; wrong allergens!</div>
+</div>
+
+<!-- ══════════════ GAME-OVER SCREEN ══════════════ -->
+<div id="game-over-screen" class="screen hidden">
+    <h1 style="font-size:clamp(0.9rem,4vw,1.2rem);">CHALLENGE<br>COMPLETE!</h1>
+    <div id="result-card">
+        <p id="final-result-msg" style="font-size:clamp(0.65rem,2.8vw,0.8rem);color:#aaa;line-height:1.8;margin:0 0 4px;"></p>
+        <span id="big-time-display" class="big-time"></span>
+        <p id="penalty-breakdown" style="font-size:clamp(0.5rem,2vw,0.6rem);color:#666;margin:0;"></p>
+    </div>
+    <h2 style="font-size:clamp(0.55rem,2.5vw,0.8rem);color:var(--neon-blue);letter-spacing:2px;margin:16px 0 4px;">🏆 TOP 10 LEADERBOARDS</h2>
+    <div class="leaderboard-container">
+        <div class="leaderboard-column">
+            <h3>PLANT P2</h3>
+            <table id="leaderboard-P2">
+                <thead><tr><th>#</th><th>Name</th><th>Dept</th><th>Time</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="leaderboard-column">
+            <h3>PLANT P3</h3>
+            <table id="leaderboard-P3">
+                <thead><tr><th>#</th><th>Name</th><th>Dept</th><th>Time</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <button class="btn" id="btn-restart" style="margin-top:18px;">↩ PLAY AGAIN</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// GAME DATA
+// ═══════════════════════════════════════════════════════════════
+const allergenData = [
+    { name: "Cheese curd",        zone: "EB",  allergen: "Milk" },
+    { name: "Flour",              zone: "EB",  allergen: "Wheat" },
+    { name: "Frozen egg yolk",    zone: "EB",  allergen: "Egg" },
+    { name: "Mustard powder",     zone: "EB",  allergen: "Mustard" },
+    { name: "Oyster sauce",       zone: "EB",  allergen: "Mollusc" },
+    { name: "Frozen Bigeye Tuna", zone: "GP",  allergen: "Fish" },
+    { name: "Soy protein",        zone: "GP",  allergen: "Soy" },
+    { name: "Peanut butter",      zone: "GP",  allergen: "Peanut" },
+    { name: "Meat seasoning",     zone: "GP",  allergen: "Egg" },
+    { name: "Wheat gluten",       zone: "GP",  allergen: "Cereals w/ Gluten" },
+    { name: "Sesame oil",         zone: "FPM", allergen: "Sesame" },
+    { name: "Ground celery",      zone: "FPM", allergen: "Celery" },
+    { name: "Cornstarch",         zone: "FPM", allergen: "Sulphites" },
+    { name: "Breadcrumbs",        zone: "FPM", allergen: "Wheat" },
+    { name: "Coconut soy sauce",  zone: "FPM", allergen: "Soy" }
+];
+
+const uniqueAllergens = [...new Set(allergenData.map(d => d.allergen))];
+
+// ═══════════════════════════════════════════════════════════════
+// CANVAS — responsive sizing
+// ═══════════════════════════════════════════════════════════════
+const CANVAS_ASPECT = 540 / 380; // ~1.42
+const canvas  = document.getElementById("gameCanvas");
+const ctx     = canvas.getContext("2d");
+let CW = 540, CH = 380; // logical canvas size (updated on resize)
+
+function resizeCanvas() {
+    const wrapper = document.getElementById("canvas-wrapper");
+    const availW  = wrapper.clientWidth;
+    CW = availW;
+    CH = Math.round(availW / CANVAS_ASPECT);
+    canvas.width  = CW;
+    canvas.height = CH;
+    // Reposition player within bounds after resize
+    if (player) {
+        player.x = Math.min(player.x, CW - player.size);
+        player.y = Math.min(player.y, CH - player.size);
+    }
+}
+
+window.addEventListener("resize", () => {
+    resizeCanvas();
+    if (!gameActive) render();   // redraw idle frame
+});
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let currentPlayer = { name: "", dept: "", plant: "" };
+let targetAllergen = "";
+let gameActive = false;
+let gamePaused = false;
+let startTime  = 0;
+let penaltyTime = 0;
+let finalScoreTime = 0;
+let lives = 3;
+let streak = 0;
+let totalCorrect = 0, totalWrong = 0, totalGhostHits = 0;
+let gameLoopInterval, timerInterval;
+let invincibleUntil = 0;
+
+let player = { x: 270, y: 190, size: 15, speed: 4, dir: 'right', mouthAngle: 0, mouthDir: 1 };
+let items = [], ghosts = [], particles = [];
+let keys = {};
+const touchKeys = { up: false, down: false, left: false, right: false };
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════════════
+let audioCtx;
+function getAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+function playTone(freq, type, duration, vol = 0.15) {
+    try {
+        const ac = getAudio();
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ac.currentTime);
+        gain.gain.setValueAtTime(vol, ac.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+        osc.start(ac.currentTime);
+        osc.stop(ac.currentTime + duration);
+    } catch(e) {}
+}
+function sfxCorrect() { playTone(440,'square',0.08); setTimeout(()=>playTone(660,'square',0.08),80); setTimeout(()=>playTone(880,'square',0.12),160); }
+function sfxWrong()   { playTone(200,'sawtooth',0.25,0.2); setTimeout(()=>playTone(150,'sawtooth',0.2,0.2),100); }
+function sfxGhost()   { playTone(180,'square',0.3,0.18); setTimeout(()=>playTone(100,'square',0.2,0.18),150); }
+function sfxWin()     { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.2),i*120)); }
+
+// ═══════════════════════════════════════════════════════════════
+// INPUT — keyboard
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener("keydown", e => {
+    keys[e.key.toLowerCase()] = true;
+    if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
+});
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+// D-pad buttons
+['up','down','left','right'].forEach(dir => {
+    const btn = document.getElementById("btn-" + dir);
+    if (!btn) return;
+    const press   = () => { touchKeys[dir] = true;  btn.classList.add('pressed'); };
+    const release = () => { touchKeys[dir] = false; btn.classList.remove('pressed'); };
+    btn.addEventListener('touchstart', e => { e.preventDefault(); press(); },   { passive: false });
+    btn.addEventListener('touchend',   e => { e.preventDefault(); release(); }, { passive: false });
+    btn.addEventListener('touchcancel',e => { e.preventDefault(); release(); }, { passive: false });
+    btn.addEventListener('mousedown',  press);
+    btn.addEventListener('mouseup',    release);
+    btn.addEventListener('mouseleave', release);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SCREENS
+// ═══════════════════════════════════════════════════════════════
+document.getElementById("btn-start").addEventListener("click", () => {
+    const name  = document.getElementById("player-name").value.trim();
+    const dept  = document.getElementById("player-dept").value.trim();
+    const plant = document.getElementById("player-plant").value;
+    if (!name || !dept || !plant) {
+        alert("Please fill in all fields.");
+        return;
+    }
+    currentPlayer = { name, dept, plant };
+    document.getElementById("ui-name").innerText = name.split(' ')[0];
+    document.getElementById("sign-in-screen").classList.add("hidden");
+    document.getElementById("game-screen").classList.remove("hidden");
+    resizeCanvas();
+    initGame();
+});
+
+document.getElementById("btn-view-lb").addEventListener("click", function() {
+    const panel   = document.getElementById("pre-leaderboard");
+    const hidden  = panel.classList.contains("hidden");
+    if (hidden) {
+        populatePreLeaderboard();
+        panel.classList.remove("hidden");
+        this.innerText = "✕ HIDE LEADERBOARD";
+    } else {
+        panel.classList.add("hidden");
+        this.innerText = "🏆 VIEW LEADERBOARD";
+    }
+});
+
+document.getElementById("btn-restart").addEventListener("click", () => {
+    document.getElementById("game-over-screen").classList.add("hidden");
+    const si = document.getElementById("sign-in-screen");
+    si.style.display = "";
+    si.classList.remove("hidden");
+    document.getElementById("player-name").value = "";
+    document.getElementById("player-dept").value = "";
+    document.getElementById("player-plant").value = "";
+    // Reset leaderboard toggle
+    document.getElementById("btn-view-lb").innerText = "🏆 VIEW LEADERBOARD";
+    document.getElementById("pre-leaderboard").classList.add("hidden");
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT GAME
+// ═══════════════════════════════════════════════════════════════
+function initGame() {
+    targetAllergen = uniqueAllergens[Math.floor(Math.random() * uniqueAllergens.length)];
+
+    player.x = CW / 2;  player.y = CH / 2;
+    player.dir = 'right';
+    penaltyTime = 0; lives = 3; streak = 0;
+    totalCorrect = 0; totalWrong = 0; totalGhostHits = 0;
+    invincibleUntil = 0; particles = [];
+    gameActive = false; gamePaused = false;
+
+    document.getElementById("target-allergen").innerText = targetAllergen.toUpperCase();
+    updateLivesDisplay();
+
+    // ── Grid-based spawn (5 cols × 3 rows) ──
+    items = [];
+    const cols = 5, rows = 3;
+    const cellW = (CW - 80) / cols;
+    const cellH = (CH - 80) / rows;
+    const jitter = 0.28;
+    const shuffled = [...allergenData].sort(() => Math.random() - 0.5);
+
+    // RMs whose name gives away the allergen — never mark as target
+    const obviousClues = new Set([
+        "Frozen egg yolk", "Mustard powder", "Soy protein",
+        "Peanut butter", "Sesame oil", "Ground celery", "Coconut soy sauce"
+    ]);
+
+    // Clear zone around player spawn so no item overlaps the starting position
+    const PLAYER_CLEAR_RADIUS = 80;
+
+    shuffled.forEach((data, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const cx  = 40 + col * cellW + cellW / 2;
+        const cy  = 40 + row * cellH + cellH / 2;
+
+        // Jitter but push away from player center if too close
+        let x, y, attempts = 0;
+        do {
+            x = Math.max(25, Math.min(CW - 25, cx + (Math.random()*2-1)*cellW*jitter));
+            y = Math.max(25, Math.min(CH - 25, cy + (Math.random()*2-1)*cellH*jitter));
+            attempts++;
+        } while (Math.hypot(x - CW/2, y - CH/2) < PLAYER_CLEAR_RADIUS && attempts < 20);
+
+        const isTarget = data.allergen === targetAllergen && !obviousClues.has(data.name);
+        items.push({
+            x, y,
+            name:      data.name,
+            zone:      data.zone,
+            allergen:  data.allergen,
+            isTarget,
+            size: 9,
+            pulsePhase: Math.random() * Math.PI * 2
+        });
+    });
+
+    // ── Ghosts — spawn at corners, well away from player center ──
+    ghosts = [
+        { x: CW*0.05, y: CH*0.08, dx:1.3,  dy:1.3,  speed:1.3, type:'bouncer' },
+        { x: CW*0.95, y: CH*0.08, dx:-1.5, dy:1.2,  speed:1.5, type:'chaser', chaseTimer:0 },
+        { x: CW*0.95, y: CH*0.92, dx:-1.4, dy:-1.4, speed:1.4, type:'bouncer' }
+    ];
+
+    updateProgressBar();
+    startCountdown();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COUNTDOWN
+// ═══════════════════════════════════════════════════════════════
+function startCountdown() {
+    gamePaused = true;
+    const overlay = document.getElementById("countdown-overlay");
+    overlay.style.display = "block";
+    let count = 3;
+    overlay.innerText = count;
+    playTone(660, 'square', 0.15);
+
+    const tick = setInterval(() => {
+        count--;
+        if (count > 0) {
+            overlay.innerText = count;
+            playTone(660, 'square', 0.15);
+        } else {
+            overlay.innerText = "GO!";
+            playTone(880, 'square', 0.2);
+            setTimeout(() => {
+                overlay.style.display = "none";
+                startTime  = Date.now();
+                gameActive = true;
+                gamePaused = false;
+                clearInterval(gameLoopInterval);
+                clearInterval(timerInterval);
+                gameLoopInterval = setInterval(updateGame, 1000/60);
+                timerInterval    = setInterval(updateTimer, 100);
+            }, 600);
+            clearInterval(tick);
+        }
+    }, 800);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════════
+function updateTimer() {
+    if (!gameActive) return;
+    const elapsed = (Date.now() - startTime) / 1000;
+    document.getElementById("ui-timer").innerText = (elapsed + penaltyTime).toFixed(1) + "s";
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════════════════
+function spawnParticles(x, y, color, count = 8) {
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+        const speed = 1.5 + Math.random() * 2.5;
+        particles.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, color, life: 1.0, size: 3+Math.random()*3 });
+    }
+}
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= 0.04; p.size *= 0.97;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+function drawParticles() {
+    particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════
+function updateProgressBar() {
+    const initial   = allergenData.filter(d => d.allergen === targetAllergen).length;
+    const remaining = items.filter(i => i.isTarget && !i.collected).length;
+    const pct = initial > 0 ? ((initial - remaining) / initial) * 100 : 100;
+    document.getElementById("progress-bar").style.width = pct + "%";
+}
+
+function updateLivesDisplay() {
+    const full  = '❤️'.repeat(lives);
+    const empty = '🖤'.repeat(3 - lives);
+    document.getElementById("lives-display").innerText = full + empty;
+}
+
+function loseLife() {
+    if (Date.now() < invincibleUntil) return;
+    lives--;
+    updateLivesDisplay();
+    invincibleUntil = Date.now() + 2500;
+    penaltyTime += 3;
+    flashScreen('#ff000033');
+    document.getElementById("game-screen").classList.add("penalty-flash");
+    setTimeout(() => document.getElementById("game-screen").classList.remove("penalty-flash"), 500);
+    if (lives <= 0) endGame();
+}
+
+function flashScreen(color) {
+    const overlay = document.getElementById("flash-overlay");
+    overlay.style.background = color;
+    overlay.style.opacity = '1';
+    setTimeout(() => overlay.style.opacity = '0', 150);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN UPDATE LOOP
+// ═══════════════════════════════════════════════════════════════
+function updateGame() {
+    if (!gameActive || gamePaused) return;
+
+    // Player movement
+    const up    = keys['arrowup']    || keys['w'] || touchKeys.up;
+    const down  = keys['arrowdown']  || keys['s'] || touchKeys.down;
+    const left  = keys['arrowleft']  || keys['a'] || touchKeys.left;
+    const right = keys['arrowright'] || keys['d'] || touchKeys.right;
+
+    if (up)    { player.y -= player.speed; player.dir = 'up'; }
+    if (down)  { player.y += player.speed; player.dir = 'down'; }
+    if (left)  { player.x -= player.speed; player.dir = 'left'; }
+    if (right) { player.x += player.speed; player.dir = 'right'; }
+
+    player.x = Math.max(player.size, Math.min(CW - player.size, player.x));
+    player.y = Math.max(player.size, Math.min(CH - player.size, player.y));
+
+    // Mouth animation
+    player.mouthAngle += 0.15 * player.mouthDir;
+    if (player.mouthAngle > 0.25 || player.mouthAngle < 0) player.mouthDir *= -1;
+
+    // Ghosts
+    const now = Date.now();
+    const isInvincible = now < invincibleUntil;
+
+    ghosts.forEach(ghost => {
+        if (ghost.type === 'chaser') {
+            ghost.chaseTimer = (ghost.chaseTimer || 0) + 1;
+            if (ghost.chaseTimer % 120 < 36) {
+                const dx = player.x - ghost.x, dy = player.y - ghost.y;
+                const d  = Math.hypot(dx, dy);
+                if (d > 5) { ghost.x += (dx/d)*ghost.speed*0.85; ghost.y += (dy/d)*ghost.speed*0.85; }
+            } else {
+                ghost.x += ghost.dx; ghost.y += ghost.dy;
+            }
+        } else {
+            ghost.x += ghost.dx; ghost.y += ghost.dy;
+        }
+        if (ghost.x <= 12 || ghost.x >= CW - 12) ghost.dx *= -1;
+        if (ghost.y <= 12 || ghost.y >= CH - 12) ghost.dy *= -1;
+
+        if (!isInvincible && Math.hypot(player.x - ghost.x, player.y - ghost.y) < player.size + 12) {
+            totalGhostHits++;
+            sfxGhost();
+            spawnParticles(player.x, player.y, '#ff4444', 12);
+            loseLife();
+            ghost.dx *= -1; ghost.dy *= -1;
+            ghost.x += ghost.dx * 8; ghost.y += ghost.dy * 8;
+        }
+    });
+
+    // Item collisions
+    for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        if (item.collected) continue;
+        if (Math.hypot(player.x - item.x, player.y - item.y) < player.size + item.size + 2) {
+            item.collected = true;
+            if (item.isTarget) {
+                streak++; totalCorrect++;
+                sfxCorrect();
+                spawnParticles(item.x, item.y, '#39ff14', 10);
+                flashScreen('#00ff0018');
+            } else {
+                streak = 0; totalWrong++;
+                sfxWrong();
+                spawnParticles(item.x, item.y, '#ff6600', 10);
+                penaltyTime += 3;
+                flashScreen('#ff660033');
+                loseLife();
+            }
+            updateProgressBar();
+        }
+    }
+
+    if (items.filter(i => i.isTarget && !i.collected).length === 0) {
+        sfxWin(); endGame();
+    }
+
+    updateParticles();
+    render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+function render() {
+    ctx.clearRect(0, 0, CW, CH);
+
+    // Subtle grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (let gx = 0; gx < CW; gx += 30) { ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,CH); ctx.stroke(); }
+    for (let gy = 0; gy < CH; gy += 30) { ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(CW,gy); ctx.stroke(); }
+
+    drawParticles();
+
+    // Items
+    const now = Date.now();
+    const scaleFactor = CW / 540; // scale label font with canvas
+
+    items.forEach(item => {
+        if (item.collected) return;
+        const pulse  = 0.5 + 0.5 * Math.sin(now * 0.003 + item.pulsePhase);
+        const radius = item.size + pulse * 1.5;
+
+        ctx.beginPath();
+        ctx.arc(item.x, item.y, radius + 3, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${0.06 + pulse * 0.04})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(item.x, item.y, radius, 0, Math.PI*2);
+        ctx.fillStyle = '#e0e0f0';
+        ctx.fill();
+
+        const fontSize = Math.max(7, Math.round(8 * scaleFactor));
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(item.name, item.x, item.y - radius - 3);
+    });
+
+    // Ghosts
+    const isInvincible = now < invincibleUntil;
+    const ghostSize = Math.max(18, Math.round(22 * scaleFactor));
+    ghosts.forEach(ghost => {
+        ctx.save();
+        if (isInvincible) ctx.globalAlpha = 0.4 + 0.6 * Math.sin(now * 0.02);
+        ctx.font = `${ghostSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText("👻", ghost.x, ghost.y);
+        ctx.restore();
+    });
+
+    // Player (Pac-Man)
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    const rotMap = { right:0, down:Math.PI/2, left:Math.PI, up:-Math.PI/2 };
+    ctx.rotate(rotMap[player.dir] || 0);
+    if (isInvincible && Math.floor(now/100)%2===0) ctx.globalAlpha = 0.4;
+    const mouthOpen = player.mouthAngle * Math.PI;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.size, mouthOpen, Math.PI*2 - mouthOpen);
+    ctx.lineTo(0, 0);
+    ctx.fillStyle = '#fefe00';
+    ctx.shadowColor = '#fefe00';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.closePath();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(3, -6, 2.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// END GAME
+// ═══════════════════════════════════════════════════════════════
+async function endGame() {
+    gameActive = false;
+    clearInterval(gameLoopInterval);
+    clearInterval(timerInterval);
+
+    const elapsed = (Date.now() - startTime) / 1000;
+    finalScoreTime = parseFloat((elapsed + penaltyTime).toFixed(1));
+
+    document.getElementById("final-result-msg").innerHTML =
+        `Well done, <b>${currentPlayer.name}</b>!<br>You cleared all <b>${targetAllergen}</b> allergen items.`;
+    document.getElementById("big-time-display").innerText = finalScoreTime + "s";
+
+    let breakdown = `Raw time: ${elapsed.toFixed(1)}s`;
+    if (penaltyTime > 0) {
+        breakdown += ` | Penalties: +${penaltyTime.toFixed(0)}s`;
+        if (totalGhostHits > 0) breakdown += ` (${totalGhostHits} ghost hit${totalGhostHits>1?'s':''} ×3s)`;
+        if (totalWrong > 0)     breakdown += ` (${totalWrong} wrong item${totalWrong>1?'s':''} ×3s)`;
+    }
+    document.getElementById("penalty-breakdown").innerHTML = breakdown;
+
+    document.getElementById("game-screen").classList.add("hidden");
+    document.getElementById("game-over-screen").classList.remove("hidden");
+
+    // Save score first, then fetch fresh leaderboard
+    document.querySelector("#leaderboard-P2 tbody").innerHTML =
+        '<tr><td colspan="4" style="color:#555;padding:10px">Saving score…</td></tr>';
+    document.querySelector("#leaderboard-P3 tbody").innerHTML =
+        '<tr><td colspan="4" style="color:#555;padding:10px">Saving score…</td></tr>';
+
+    await saveToLeaderboard(currentPlayer.name, currentPlayer.dept, currentPlayer.plant, finalScoreTime);
+    setTimeout(displayLeaderboards, 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEADERBOARD — Google Sheets via Apps Script
+// Uses JSONP for GET (bypasses CORS) and iframe for POST
+// ═══════════════════════════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx2CeuH2k2BIueLSCaLuRizAi5lXTwP4SjdrAuDIE8OP1ofp8n-Lp2VQXkxbNp6X58D/exec";
+
+// POST via fetch with no-cors (fire-and-forget — GAS will receive it)
+function saveToLeaderboard(name, dept, plant, scoreTime) {
+    return new Promise(resolve => {
+        const params = new URLSearchParams({ name, dept, plant, time: scoreTime });
+        fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+        .catch(e => console.warn("Save error:", e))
+        .finally(() => resolve());
+    });
+}
+
+// GET via JSONP — works cross-origin without CORS headers
+function fetchLeaderboard() {
+    return new Promise(resolve => {
+        const cbName = "gasCallback_" + Date.now();
+        const script = document.createElement("script");
+        const timer  = setTimeout(() => {
+            cleanup();
+            console.warn("Leaderboard fetch timed out");
+            resolve({ P2: [], P3: [] });
+        }, 10000);
+
+        function cleanup() {
+            clearTimeout(timer);
+            delete window[cbName];
+            if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cbName] = function(data) {
+            cleanup();
+            resolve(data);
+        };
+
+        script.src = GAS_URL + "?callback=" + cbName + "&t=" + Date.now();
+        script.onerror = (err) => {
+            console.warn("JSONP error:", err);
+            cleanup();
+            resolve({ P2: [], P3: [] });
+        };
+        document.head.appendChild(script);
+    });
+}
+
+function buildLeaderboardRows(entries, tbody) {
+    tbody.innerHTML = "";
+    if (!entries || entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:#444;padding:10px">No entries yet</td></tr>';
+        return;
+    }
+    entries.forEach((entry, idx) => {
+        const rank = idx + 1;
+        const tr   = document.createElement("tr");
+        if (rank <= 3) tr.classList.add("rank-" + rank);
+        tr.innerHTML = `<td>${rank===1?"🥇":rank===2?"🥈":rank===3?"🥉":rank}</td>
+            <td><b>${entry.name.split(" ")[0]}</b></td>
+            <td>${entry.dept}</td>
+            <td style="color:var(--neon-blue)">${entry.time}s</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function setLeaderboardLoading(prefix) {
+    ["P2","P3"].forEach(plant => {
+        const tbody = document.querySelector("#" + prefix + "leaderboard-" + plant + " tbody");
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:#555;padding:10px">Loading…</td></tr>';
+    });
+}
+
+async function displayLeaderboards() {
+    setLeaderboardLoading("");
+    const data = await fetchLeaderboard();
+    buildLeaderboardRows(data.P2 || [], document.querySelector("#leaderboard-P2 tbody"));
+    buildLeaderboardRows(data.P3 || [], document.querySelector("#leaderboard-P3 tbody"));
+}
+
+async function populatePreLeaderboard() {
+    setLeaderboardLoading("pre-");
+    const data = await fetchLeaderboard();
+    buildLeaderboardRows(data.P2 || [], document.querySelector("#pre-leaderboard-P2 tbody"));
+    buildLeaderboardRows(data.P3 || [], document.querySelector("#pre-leaderboard-P3 tbody"));
+}
+
+// ── Boot ──
+resizeCanvas();
+</script>
+</body>
+</html>
